@@ -1,48 +1,52 @@
-import 'dart:async';
 
 import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
-import 'package:social_media/auth/auth_credentials.dart';
 import 'package:social_media/auth/auth_cubit.dart';
 import 'package:social_media/auth/form_submission_status.dart';
+import 'package:social_media/auth/sign_up/sign_up_state.dart';
+import 'package:social_media/auth/sign_up/sign_up_event.dart';
+import 'dart:async';
 
 import '../auth_repository.dart';
 
-part 'login_event.dart';
 
-part 'login_state.dart';
 
-class LoginBloc extends Bloc<LoginEvent, LoginState> {
+class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
   final AuthRepository authRepo;
   final AuthCubit authCubit;
 
-  LoginBloc({required this.authRepo, required this.authCubit}) : super(LoginState());
+  SignUpBloc({required this.authRepo, required this.authCubit}) : super(SignUpState());
 
   @override
-  Stream<LoginState> mapEventToState(LoginEvent event) async* {
+  Stream<SignUpState> mapEventToState(SignUpEvent event) async* {
     // Username updated
-    if (event is LoginUsernameChanged) {
+    if (event is SignUpUsernameChanged) {
       yield state.copyWith(username: event.username);
 
+      // Email updated
+    } else if (event is SignUpEmailChanged) {
+      yield state.copyWith(email: event.email);
+
       // Password updated
-    } else if (event is LoginPasswordChanged) {
+    } else if (event is SignUpPasswordChanged) {
       yield state.copyWith(password: event.password);
 
       // Form submitted
-    } else if (event is LoginSubmitted) {
+    } else if (event is SignUpSubmitted) {
       yield state.copyWith(formStatus: FormSubmitting());
 
       try {
-        final userId = await authRepo.login(
+        await authRepo.signUp(
           username: state.username,
+          email: state.email,
           password: state.password,
         );
         yield state.copyWith(formStatus: SubmissionSuccess());
 
-        authCubit.launchSession(AuthCredentials(
+        authCubit.showConfirmSignUp(
           username: state.username,
-          userId: userId,
-        ));
+          email: state.email,
+          password: state.password,
+        );
       } catch (e) {
         yield state.copyWith(formStatus: SubmissionFailed(e as Exception));
       }
