@@ -11,6 +11,11 @@ class SessionCubit extends Cubit<SessionState> {
   final AuthRepository authRepo;
   final DataRepository dataRepo;
 
+  User get currentUser => (state as Authenticated).user;
+  User? get selectedUser => (state as Authenticated).selectedUser;
+  bool get isCurrentUserSelected =>
+      selectedUser == null || currentUser.id == selectedUser!.id;
+
   SessionCubit({required this.authRepo, required this.dataRepo})
       : super(UnknownSessionState()) {
     attemptAutoLogin();
