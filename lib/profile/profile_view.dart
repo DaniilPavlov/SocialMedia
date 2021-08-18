@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:social_media/profile/profile_bloc.dart';
+import 'package:social_media/profile/profile_event.dart';
 import 'package:social_media/profile/profile_state.dart';
-import 'profile_event.dart';
 import 'package:social_media/session_cubit.dart';
 
 class ProfileView extends StatelessWidget {
@@ -14,10 +19,17 @@ class ProfileView extends StatelessWidget {
         user: sessionCubit.selectedUser ?? sessionCubit.currentUser,
         isCurrentUser: sessionCubit.isCurrentUserSelected,
       ),
-      child: Scaffold(
-        backgroundColor: Color(0xFFF2F2F7),
-        appBar: _appBar(),
-        body: _profilePage(),
+      child: BlocListener<ProfileBloc, ProfileState>(
+        listener: (context, state) {
+          if (state.imageSourceActionSheetIsVisible) {
+            _showImageSourceActionSheet(context);
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Color(0xFFF2F2F7),
+          appBar: _appBar(),
+          body: _profilePage(),
+        ),
       ),
     );
   }
@@ -65,16 +77,18 @@ class ProfileView extends StatelessWidget {
   Widget _avatar() {
     return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
       return CircleAvatar(
-        radius: 50,
-        child: Icon(Icons.person),
-      );
+          radius: 50,
+          child: Icon(Icons.person),
+          backgroundImage: state.avatarPath != null
+              ? FileImage(File(state.avatarPath!))
+              : null);
     });
   }
 
   Widget _changeAvatarButton() {
     return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
       return TextButton(
-        onPressed: () {},
+        onPressed: () => context.read<ProfileBloc>().add(ChangeAvatarRequest()),
         child: Text('Change Avatar'),
       );
     });
@@ -134,5 +148,59 @@ class ProfileView extends StatelessWidget {
         child: Text('Save Changes'),
       );
     });
+  }
+
+  void _showImageSourceActionSheet(BuildContext context) {
+    Function(ImageSource) selectImageSource = (imageSource) {
+      context
+          .read<ProfileBloc>()
+          .add(OpenImagePicker(imageSource: imageSource));
+    };
+
+    if (Platform.isIOS) {
+      showCupertinoModalPopup(
+        context: context,
+        builder: (context) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              child: Text('Camera'),
+              onPressed: () {
+                Navigator.pop(context);
+                selectImageSource(ImageSource.camera);
+              },
+            ),
+            CupertinoActionSheetAction(
+              child: Text('Gallery'),
+              onPressed: () {
+                Navigator.pop(context);
+                selectImageSource(ImageSource.gallery);
+              },
+            )
+          ],
+        ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => Wrap(children: [
+          ListTile(
+            leading: Icon(Icons.camera_alt),
+            title: Text('Camera'),
+            onTap: () {
+              Navigator.pop(context);
+              selectImageSource(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.photo_album),
+            title: Text('Gallery'),
+            onTap: () {
+              Navigator.pop(context);
+              selectImageSource(ImageSource.gallery);
+            },
+          ),
+        ]),
+      );
+    }
   }
 }

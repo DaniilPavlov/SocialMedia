@@ -10,7 +10,7 @@ import 'amplifyconfiguration.dart';
 import 'app_navigator.dart';
 import 'auth/auth_repository.dart';
 import 'data_repository.dart';
-import 'loagind_view.dart';
+import 'loading_view.dart';
 import 'models/ModelProvider.dart';
 
 void main() {
