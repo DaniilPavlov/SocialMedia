@@ -2,13 +2,14 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media/data_repository.dart';
 import 'package:social_media/profile/profile_bloc.dart';
 import 'package:social_media/profile/profile_event.dart';
 import 'package:social_media/profile/profile_state.dart';
 import 'package:social_media/session_cubit.dart';
+import 'package:social_media/storage_repository.dart';
 
 class ProfileView extends StatelessWidget {
   @override
@@ -16,6 +17,8 @@ class ProfileView extends StatelessWidget {
     final sessionCubit = context.read<SessionCubit>();
     return BlocProvider(
       create: (context) => ProfileBloc(
+        dataRepo: context.read<DataRepository>(),
+        storageRepo: context.read<StorageRepository>(),
         user: sessionCubit.selectedUser ?? sessionCubit.currentUser,
         isCurrentUser: sessionCubit.isCurrentUserSelected,
       ),
@@ -76,12 +79,10 @@ class ProfileView extends StatelessWidget {
 
   Widget _avatar() {
     return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
-      return CircleAvatar(
-          radius: 50,
-          child: Icon(Icons.person),
-          backgroundImage: state.avatarPath != null
-              ? FileImage(File(state.avatarPath!))
-              : null);
+      return state.avatarPath == null
+          ? CircleAvatar(radius: 50, child: Icon(Icons.person))
+          : CircleAvatar(
+              radius: 50, backgroundImage: NetworkImage(state.avatarPath!));
     });
   }
 
