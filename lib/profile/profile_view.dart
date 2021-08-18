@@ -1,15 +1,18 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:social_media/auth/form_submission_status.dart';
 import 'package:social_media/data_repository.dart';
 import 'package:social_media/profile/profile_bloc.dart';
 import 'package:social_media/profile/profile_event.dart';
 import 'package:social_media/profile/profile_state.dart';
 import 'package:social_media/session_cubit.dart';
 import 'package:social_media/storage_repository.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileView extends StatelessWidget {
   @override
@@ -26,6 +29,10 @@ class ProfileView extends StatelessWidget {
         listener: (context, state) {
           if (state.imageSourceActionSheetIsVisible) {
             _showImageSourceActionSheet(context);
+          }
+          final formStatus = state.formStatus;
+          if (formStatus is SubmissionFailed) {
+            _showSnackBar(context, formStatus.exception.toString());
           }
         },
         child: Scaffold(
@@ -79,10 +86,26 @@ class ProfileView extends StatelessWidget {
 
   Widget _avatar() {
     return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
-      return state.avatarPath == null
-          ? CircleAvatar(radius: 50, child: Icon(Icons.person))
-          : CircleAvatar(
-              radius: 50, backgroundImage: NetworkImage(state.avatarPath!));
+      return Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.blue,
+        ),
+        width: 100,
+        height: 100,
+        child: state.avatarPath == null
+            ? Icon(
+                Icons.person,
+                size: 50,
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: CachedNetworkImage(
+                  imageUrl: state.avatarPath!,
+                  fit: BoxFit.cover,
+                ),
+              ),
+      );
     });
   }
 
@@ -144,10 +167,13 @@ class ProfileView extends StatelessWidget {
 
   Widget _saveProfileChangesButton() {
     return BlocBuilder<ProfileBloc, ProfileState>(builder: (context, state) {
-      return ElevatedButton(
-        onPressed: () {},
-        child: Text('Save Changes'),
-      );
+      return (state.formStatus is FormSubmitting)
+          ? CircularProgressIndicator()
+          : ElevatedButton(
+              onPressed: () =>
+                  context.read<ProfileBloc>().add(SaveProfileChanges()),
+              child: Text('Save Changes'),
+            );
     });
   }
 
@@ -203,5 +229,10 @@ class ProfileView extends StatelessWidget {
         ]),
       );
     }
+  }
+
+  void _showSnackBar(BuildContext context, String message) {
+    final snackBar = SnackBar(content: Text(message));
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

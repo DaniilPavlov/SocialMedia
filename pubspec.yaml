@@ -32,6 +32,7 @@ dependencies:
   amplify_auth_cognito:
   amplify_storage_s3:
   image_picker:
+  cached_network_image:
 
 
   # The following adds the Cupertino Icons font to your application.
