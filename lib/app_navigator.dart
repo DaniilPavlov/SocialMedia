@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:social_media/BottomNavView/bottom_nav_bar_view.dart';
 import 'package:social_media/profile/profile_view.dart';
 import 'package:social_media/session_cubit.dart';
 import 'auth/auth_cubit.dart';
@@ -27,7 +28,7 @@ class AppNavigator extends StatelessWidget {
             ),
 
           // Show session flow
-          if (state is Authenticated) MaterialPage(child: ProfileView())
+          if (state is Authenticated) MaterialPage(child: BottomNavBarView())
         ],
         onPopPage: (route, result) => route.didPop(result),
       );
